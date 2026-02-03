@@ -6,29 +6,25 @@
 import Foundation
 import CoreData
 
-protocol TodoStorageServiceProtocol {
-    func fetchAllTodos(completion: @escaping (Result<[TodoItem], Error>) -> Void)
-    func saveTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void)
-    func updateTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void)
-    func deleteTodo(id: Int64, completion: @escaping (Result<Void, Error>) -> Void)
-    func searchTodos(query: String, completion: @escaping (Result<[TodoItem], Error>) -> Void)
+protocol TodoStorageServiceProtocol: Sendable {
+    func fetchAllTodos() async throws -> [TodoItem]
+    func saveTodo(_ item: TodoItem) async throws
+    func saveTodos(_ items: [TodoItem]) async throws
+    func updateTodo(_ item: TodoItem) async throws
+    func deleteTodo(id: Int64) async throws
+    func searchTodos(query: String) async throws -> [TodoItem]
     func isFirstLaunch() -> Bool
     func setFirstLaunchCompleted()
-    func getNextId(completion: @escaping (Int64) -> Void)
-    func saveTodos(_ items: [TodoItem], completion: @escaping (Result<Void, Error>) -> Void)
+    func getNextId() async -> Int64
 }
 
-final class TodoStorageService: TodoStorageServiceProtocol {
+final class TodoStorageService: TodoStorageServiceProtocol, @unchecked Sendable {
 
     private let coreDataStack: CoreDataStack
-    private let operationQueue: OperationQueue
     private let firstLaunchKey = "isFirstLaunchCompleted"
 
     init(coreDataStack: CoreDataStack = .shared) {
         self.coreDataStack = coreDataStack
-        self.operationQueue = OperationQueue()
-        self.operationQueue.maxConcurrentOperationCount = 1
-        self.operationQueue.qualityOfService = .userInitiated
     }
 
     func isFirstLaunch() -> Bool {
@@ -39,61 +35,45 @@ final class TodoStorageService: TodoStorageServiceProtocol {
         UserDefaults.standard.set(true, forKey: firstLaunchKey)
     }
 
-    func fetchAllTodos(completion: @escaping (Result<[TodoItem], Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func fetchAllTodos() async throws -> [TodoItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let fetchRequest: NSFetchRequest<TodoEntity> = TodoEntity.fetchRequest()
                 fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
 
                 do {
                     let entities = try context.fetch(fetchRequest)
                     let items = entities.map { $0.toTodoItem() }
-                    DispatchQueue.main.async {
-                        completion(.success(items))
-                    }
+                    continuation.resume(returning: items)
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func saveTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func saveTodo(_ item: TodoItem) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let entity = TodoEntity(context: context)
                 entity.update(from: item)
 
                 do {
                     try context.save()
-                    DispatchQueue.main.async {
-                        completion(.success(()))
-                    }
+                    continuation.resume()
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func saveTodos(_ items: [TodoItem], completion: @escaping (Result<Void, Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func saveTodos(_ items: [TodoItem]) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 for item in items {
                     let entity = TodoEntity(context: context)
                     entity.update(from: item)
@@ -101,25 +81,18 @@ final class TodoStorageService: TodoStorageServiceProtocol {
 
                 do {
                     try context.save()
-                    DispatchQueue.main.async {
-                        completion(.success(()))
-                    }
+                    continuation.resume()
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func updateTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func updateTodo(_ item: TodoItem) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let fetchRequest: NSFetchRequest<TodoEntity> = TodoEntity.fetchRequest()
                 fetchRequest.predicate = NSPredicate(format: "id == %lld", item.id)
 
@@ -128,30 +101,21 @@ final class TodoStorageService: TodoStorageServiceProtocol {
                     if let entity = results.first {
                         entity.update(from: item)
                         try context.save()
-                        DispatchQueue.main.async {
-                            completion(.success(()))
-                        }
+                        continuation.resume()
                     } else {
-                        DispatchQueue.main.async {
-                            completion(.failure(StorageError.notFound))
-                        }
+                        continuation.resume(throwing: StorageError.notFound)
                     }
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func deleteTodo(id: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func deleteTodo(id: Int64) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let fetchRequest: NSFetchRequest<TodoEntity> = TodoEntity.fetchRequest()
                 fetchRequest.predicate = NSPredicate(format: "id == %lld", id)
 
@@ -160,30 +124,21 @@ final class TodoStorageService: TodoStorageServiceProtocol {
                     if let entity = results.first {
                         context.delete(entity)
                         try context.save()
-                        DispatchQueue.main.async {
-                            completion(.success(()))
-                        }
+                        continuation.resume()
                     } else {
-                        DispatchQueue.main.async {
-                            completion(.failure(StorageError.notFound))
-                        }
+                        continuation.resume(throwing: StorageError.notFound)
                     }
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func searchTodos(query: String, completion: @escaping (Result<[TodoItem], Error>) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func searchTodos(query: String) async throws -> [TodoItem] {
+        try await withCheckedThrowingContinuation { continuation in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let fetchRequest: NSFetchRequest<TodoEntity> = TodoEntity.fetchRequest()
 
                 if !query.isEmpty {
@@ -197,25 +152,18 @@ final class TodoStorageService: TodoStorageServiceProtocol {
                 do {
                     let entities = try context.fetch(fetchRequest)
                     let items = entities.map { $0.toTodoItem() }
-                    DispatchQueue.main.async {
-                        completion(.success(items))
-                    }
+                    continuation.resume(returning: items)
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(.failure(error))
-                    }
+                    continuation.resume(throwing: error)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 
-    func getNextId(completion: @escaping (Int64) -> Void) {
-        let operation = BlockOperation { [weak self] in
-            guard let self = self else { return }
-
-            let context = self.coreDataStack.newBackgroundContext()
-            context.performAndWait {
+    func getNextId() async -> Int64 {
+        await withCheckedContinuation { continuation in
+            let context = coreDataStack.newBackgroundContext()
+            context.perform {
                 let fetchRequest: NSFetchRequest<TodoEntity> = TodoEntity.fetchRequest()
                 fetchRequest.sortDescriptors = [NSSortDescriptor(key: "id", ascending: false)]
                 fetchRequest.fetchLimit = 1
@@ -223,17 +171,12 @@ final class TodoStorageService: TodoStorageServiceProtocol {
                 do {
                     let results = try context.fetch(fetchRequest)
                     let nextId = (results.first?.id ?? 0) + 1
-                    DispatchQueue.main.async {
-                        completion(nextId)
-                    }
+                    continuation.resume(returning: nextId)
                 } catch {
-                    DispatchQueue.main.async {
-                        completion(1)
-                    }
+                    continuation.resume(returning: 1)
                 }
             }
         }
-        operationQueue.addOperation(operation)
     }
 }
 

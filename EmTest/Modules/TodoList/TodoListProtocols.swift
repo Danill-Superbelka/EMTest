@@ -6,6 +6,7 @@
 import UIKit
 
 // MARK: - View
+@MainActor
 protocol TodoListViewProtocol: AnyObject {
     var presenter: TodoListPresenterProtocol? { get set }
 
@@ -13,11 +14,15 @@ protocol TodoListViewProtocol: AnyObject {
     func showError(_ message: String)
     func showLoading()
     func hideLoading()
+    func showEmptyState()
+    func hideEmptyState()
     func updateTodoStatus(at index: Int, isCompleted: Bool)
     func removeTodo(at index: Int)
+    func endRefreshing()
 }
 
 // MARK: - Presenter
+@MainActor
 protocol TodoListPresenterProtocol: AnyObject {
     var view: TodoListViewProtocol? { get set }
     var interactor: TodoListInteractorInputProtocol? { get set }
@@ -29,6 +34,7 @@ protocol TodoListPresenterProtocol: AnyObject {
     func didTapToggleComplete(at index: Int)
     func didTapDelete(at index: Int)
     func didSearch(query: String)
+    func didPullToRefresh()
     func numberOfTodos() -> Int
     func todo(at index: Int) -> TodoItem?
 }
@@ -37,14 +43,15 @@ protocol TodoListPresenterProtocol: AnyObject {
 protocol TodoListInteractorInputProtocol: AnyObject {
     var presenter: TodoListInteractorOutputProtocol? { get set }
 
-    func fetchTodos()
-    func loadFromAPIIfNeeded()
-    func toggleTodoComplete(item: TodoItem)
-    func deleteTodo(id: Int64)
-    func searchTodos(query: String)
+    func fetchTodos() async
+    func loadFromAPIIfNeeded() async
+    func toggleTodoComplete(item: TodoItem) async
+    func deleteTodo(id: Int64) async
+    func searchTodos(query: String) async
 }
 
 // MARK: - Interactor Output
+@MainActor
 protocol TodoListInteractorOutputProtocol: AnyObject {
     func didFetchTodos(_ todos: [TodoItem])
     func didFailFetchingTodos(error: Error)

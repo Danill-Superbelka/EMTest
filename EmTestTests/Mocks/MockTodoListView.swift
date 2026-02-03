@@ -15,8 +15,11 @@ final class MockTodoListView: TodoListViewProtocol {
     var showErrorCalled = false
     var showLoadingCalled = false
     var hideLoadingCalled = false
+    var showEmptyStateCalled = false
+    var hideEmptyStateCalled = false
     var updateTodoStatusCalled = false
     var removeTodoCalled = false
+    var endRefreshingCalled = false
 
     var displayedTodos: [TodoItem] = []
     var errorMessage: String?
@@ -42,6 +45,14 @@ final class MockTodoListView: TodoListViewProtocol {
         hideLoadingCalled = true
     }
 
+    func showEmptyState() {
+        showEmptyStateCalled = true
+    }
+
+    func hideEmptyState() {
+        hideEmptyStateCalled = true
+    }
+
     func updateTodoStatus(at index: Int, isCompleted: Bool) {
         updateTodoStatusCalled = true
         updatedIndex = index
@@ -51,5 +62,9 @@ final class MockTodoListView: TodoListViewProtocol {
     func removeTodo(at index: Int) {
         removeTodoCalled = true
         removedIndex = index
+    }
+
+    func endRefreshing() {
+        endRefreshingCalled = true
     }
 }

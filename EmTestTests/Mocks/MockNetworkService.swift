@@ -11,11 +11,10 @@ final class MockNetworkService: NetworkServiceProtocol, @unchecked Sendable {
     var mockTodos: [TodoAPIItem] = []
     var shouldFail = false
 
-    func fetchTodos(completion: @escaping (Result<[TodoAPIItem], Error>) -> Void) {
+    func fetchTodos() async throws -> [TodoAPIItem] {
         if shouldFail {
-            completion(.failure(NetworkError.noData))
-        } else {
-            completion(.success(mockTodos))
+            throw NetworkError.noData
         }
+        return mockTodos
     }
 }

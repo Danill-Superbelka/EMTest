@@ -5,6 +5,7 @@
 
 import Foundation
 
+@MainActor
 final class TodoListPresenter: TodoListPresenterProtocol {
 
     weak var view: TodoListViewProtocol?
@@ -16,7 +17,9 @@ final class TodoListPresenter: TodoListPresenterProtocol {
 
     func viewDidLoad() {
         view?.showLoading()
-        interactor?.loadFromAPIIfNeeded()
+        Task {
+            await interactor?.loadFromAPIIfNeeded()
+        }
     }
 
     func didSelectTodo(at index: Int) {
@@ -32,19 +35,35 @@ final class TodoListPresenter: TodoListPresenterProtocol {
     func didTapToggleComplete(at index: Int) {
         guard index < todos.count else { return }
         let todo = todos[index]
-        interactor?.toggleTodoComplete(item: todo)
+        Task {
+            await interactor?.toggleTodoComplete(item: todo)
+        }
     }
 
     func didTapDelete(at index: Int) {
         guard index < todos.count else { return }
         let todo = todos[index]
-        interactor?.deleteTodo(id: todo.id)
+        Task {
+            await interactor?.deleteTodo(id: todo.id)
+        }
     }
 
     func didSearch(query: String) {
         currentSearchQuery = query
         view?.showLoading()
-        interactor?.searchTodos(query: query)
+        Task {
+            await interactor?.searchTodos(query: query)
+        }
+    }
+
+    func didPullToRefresh() {
+        Task {
+            if currentSearchQuery.isEmpty {
+                await interactor?.fetchTodos()
+            } else {
+                await interactor?.searchTodos(query: currentSearchQuery)
+            }
+        }
     }
 
     func numberOfTodos() -> Int {
@@ -55,6 +74,14 @@ final class TodoListPresenter: TodoListPresenterProtocol {
         guard index < todos.count else { return nil }
         return todos[index]
     }
+
+    private func updateEmptyState() {
+        if todos.isEmpty {
+            view?.showEmptyState()
+        } else {
+            view?.hideEmptyState()
+        }
+    }
 }
 
 // MARK: - TodoListInteractorOutputProtocol
@@ -63,12 +90,16 @@ extension TodoListPresenter: TodoListInteractorOutputProtocol {
     func didFetchTodos(_ todos: [TodoItem]) {
         self.todos = todos
         view?.hideLoading()
+        view?.endRefreshing()
         view?.showTodos(todos)
+        updateEmptyState()
     }
 
     func didFailFetchingTodos(error: Error) {
         view?.hideLoading()
+        view?.endRefreshing()
         view?.showError(error.localizedDescription)
+        updateEmptyState()
     }
 
     func didUpdateTodo(_ todo: TodoItem) {
@@ -82,6 +113,7 @@ extension TodoListPresenter: TodoListInteractorOutputProtocol {
         if let index = todos.firstIndex(where: { $0.id == id }) {
             todos.remove(at: index)
             view?.removeTodo(at: index)
+            updateEmptyState()
         }
     }
 
@@ -97,18 +129,22 @@ extension TodoListPresenter: TodoDetailDelegate {
         if let index = todos.firstIndex(where: { $0.id == todo.id }) {
             todos[index] = todo
         }
-        if currentSearchQuery.isEmpty {
-            interactor?.fetchTodos()
-        } else {
-            interactor?.searchTodos(query: currentSearchQuery)
+        Task {
+            if currentSearchQuery.isEmpty {
+                await interactor?.fetchTodos()
+            } else {
+                await interactor?.searchTodos(query: currentSearchQuery)
+            }
         }
     }
 
     func didCreateTodo(_ todo: TodoItem) {
-        if currentSearchQuery.isEmpty {
-            interactor?.fetchTodos()
-        } else {
-            interactor?.searchTodos(query: currentSearchQuery)
+        Task {
+            if currentSearchQuery.isEmpty {
+                await interactor?.fetchTodos()
+            } else {
+                await interactor?.searchTodos(query: currentSearchQuery)
+            }
         }
     }
 }

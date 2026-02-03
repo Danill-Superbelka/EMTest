@@ -140,6 +140,26 @@
           }
         }
       }
+    },
+    "empty_state_title" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет задач"
+          }
+        }
+      }
+    },
+    "empty_state_subtitle" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите + чтобы создать новую задачу"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

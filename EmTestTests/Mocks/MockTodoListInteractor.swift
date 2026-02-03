@@ -21,25 +21,25 @@ final class MockTodoListInteractor: TodoListInteractorInputProtocol {
     var deletedId: Int64?
     var searchQuery: String?
 
-    func fetchTodos() {
+    func fetchTodos() async {
         fetchTodosCalled = true
     }
 
-    func loadFromAPIIfNeeded() {
+    func loadFromAPIIfNeeded() async {
         loadFromAPIIfNeededCalled = true
     }
 
-    func toggleTodoComplete(item: TodoItem) {
+    func toggleTodoComplete(item: TodoItem) async {
         toggleTodoCompleteCalled = true
         toggledItem = item
     }
 
-    func deleteTodo(id: Int64) {
+    func deleteTodo(id: Int64) async {
         deleteTodoCalled = true
         deletedId = id
     }
 
-    func searchTodos(query: String) {
+    func searchTodos(query: String) async {
         searchTodosCalled = true
         searchQuery = query
     }

@@ -33,9 +33,7 @@ struct TodoListInteractorTests {
         let todos = [TodoItem(id: 1, title: "Test")]
         mockStorageService.todos = todos
 
-        interactor.fetchTodos()
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.fetchTodos()
 
         #expect(mockPresenter.didFetchTodosCalled)
         #expect(mockPresenter.fetchedTodos.count == 1)
@@ -45,9 +43,7 @@ struct TodoListInteractorTests {
     func fetchTodosFailure() async throws {
         mockStorageService.shouldFail = true
 
-        interactor.fetchTodos()
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.fetchTodos()
 
         #expect(mockPresenter.didFailFetchingTodosCalled)
     }
@@ -58,9 +54,7 @@ struct TodoListInteractorTests {
         let todos = [TodoItem(id: 1, title: "Test")]
         mockStorageService.todos = todos
 
-        interactor.loadFromAPIIfNeeded()
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.loadFromAPIIfNeeded()
 
         #expect(mockPresenter.didFetchTodosCalled)
     }
@@ -72,9 +66,7 @@ struct TodoListInteractorTests {
             TodoAPIItem(id: 1, todo: "API Task", completed: false, userId: 1)
         ]
 
-        interactor.loadFromAPIIfNeeded()
-
-        try await Task.sleep(for: .milliseconds(250))
+        await interactor.loadFromAPIIfNeeded()
 
         #expect(mockPresenter.didFetchTodosCalled)
         #expect(mockStorageService.isFirstLaunch() == false)
@@ -85,9 +77,7 @@ struct TodoListInteractorTests {
         let todo = TodoItem(id: 1, title: "Test", isCompleted: false)
         mockStorageService.todos = [todo]
 
-        interactor.toggleTodoComplete(item: todo)
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.toggleTodoComplete(item: todo)
 
         #expect(mockPresenter.didUpdateTodoCalled)
         #expect(mockPresenter.updatedTodo?.isCompleted == true)
@@ -98,9 +88,7 @@ struct TodoListInteractorTests {
         let todo = TodoItem(id: 1, title: "Test")
         mockStorageService.todos = [todo]
 
-        interactor.deleteTodo(id: 1)
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.deleteTodo(id: 1)
 
         #expect(mockPresenter.didDeleteTodoCalled)
         #expect(mockPresenter.deletedId == 1)
@@ -114,9 +102,7 @@ struct TodoListInteractorTests {
             TodoItem(id: 2, title: "Go to gym")
         ]
 
-        interactor.searchTodos(query: "milk")
-
-        try await Task.sleep(for: .milliseconds(150))
+        await interactor.searchTodos(query: "milk")
 
         #expect(mockPresenter.didFetchTodosCalled)
         #expect(mockPresenter.fetchedTodos.count == 1)

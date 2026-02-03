@@ -9,6 +9,7 @@ import Foundation
 
 // MARK: - Mocks
 
+@MainActor
 final class MockTodoDetailView: TodoDetailViewProtocol {
     var presenter: TodoDetailPresenterProtocol?
 
@@ -39,7 +40,7 @@ final class MockTodoDetailView: TodoDetailViewProtocol {
     }
 }
 
-final class MockTodoDetailInteractor: TodoDetailInteractorInputProtocol {
+final class MockTodoDetailInteractor: TodoDetailInteractorInputProtocol, @unchecked Sendable {
     weak var presenter: TodoDetailInteractorOutputProtocol?
 
     var saveTodoCalled = false
@@ -49,21 +50,21 @@ final class MockTodoDetailInteractor: TodoDetailInteractorInputProtocol {
     var savedTodo: TodoItem?
     var updatedTodo: TodoItem?
 
-    func saveTodo(_ item: TodoItem) {
+    func saveTodo(_ item: TodoItem) async {
         saveTodoCalled = true
         savedTodo = item
-        presenter?.didSaveTodo(item)
+        await presenter?.didSaveTodo(item)
     }
 
-    func updateTodo(_ item: TodoItem) {
+    func updateTodo(_ item: TodoItem) async {
         updateTodoCalled = true
         updatedTodo = item
-        presenter?.didUpdateTodo(item)
+        await presenter?.didUpdateTodo(item)
     }
 
-    func getNextId(completion: @escaping (Int64) -> Void) {
+    func getNextId() async -> Int64 {
         getNextIdCalled = true
-        completion(100)
+        return 100
     }
 }
 
@@ -156,11 +157,13 @@ struct TodoDetailPresenterTests {
     }
 
     @Test("update existing todo")
-    func updateExistingTodo() {
+    func updateExistingTodo() async throws {
         let todo = TodoItem(id: 1, title: "Original")
         presenter.configure(todo: todo, delegate: mockDelegate)
 
         presenter.saveTodo(title: "Updated", description: "New Description")
+
+        try await Task.sleep(for: .milliseconds(150))
 
         #expect(mockView.showLoadingCalled)
         #expect(mockInteractor.updateTodoCalled)

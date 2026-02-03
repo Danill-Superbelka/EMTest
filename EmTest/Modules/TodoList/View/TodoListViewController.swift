@@ -39,7 +39,21 @@ final class TodoListViewController: UIViewController, TodoListViewProtocol {
         tableView.dataSource = self
         tableView.register(TodoTableViewCell.self, forCellReuseIdentifier: TodoTableViewCell.identifier)
         tableView.contentInsetAdjustmentBehavior = .automatic
+        tableView.refreshControl = refreshControl
         return tableView
+    }()
+
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = AppColors.accent
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        return refreshControl
+    }()
+
+    private lazy var emptyStateView: EmptyStateView = {
+        let view = EmptyStateView()
+        view.isHidden = true
+        return view
     }()
 
     private lazy var footerView: UIView = {
@@ -95,6 +109,7 @@ final class TodoListViewController: UIViewController, TodoListViewProtocol {
         extendedLayoutIncludesOpaqueBars = true
 
         view.addSubview(tableView)
+        view.addSubview(emptyStateView)
         view.addSubview(footerView)
         footerView.addSubview(todoCountLabel)
         footerView.addSubview(addButton)
@@ -108,6 +123,12 @@ final class TodoListViewController: UIViewController, TodoListViewProtocol {
         tableView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
             make.bottom.equalTo(footerView.snp.top)
+        }
+
+        emptyStateView.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(-50)
+            make.leading.trailing.equalToSuperview().inset(AppSpacing.xl)
         }
 
         todoCountLabel.snp.makeConstraints { make in
@@ -129,6 +150,10 @@ final class TodoListViewController: UIViewController, TodoListViewProtocol {
     @objc private func addButtonTapped() {
         AppHaptics.medium()
         presenter?.didTapAddTodo()
+    }
+
+    @objc private func handleRefresh() {
+        presenter?.didPullToRefresh()
     }
 
     private func updateTodoCount() {
@@ -156,6 +181,20 @@ final class TodoListViewController: UIViewController, TodoListViewProtocol {
 
     func hideLoading() {
         activityIndicator.stopAnimating()
+    }
+
+    func showEmptyState() {
+        emptyStateView.isHidden = false
+        tableView.isHidden = true
+    }
+
+    func hideEmptyState() {
+        emptyStateView.isHidden = true
+        tableView.isHidden = false
+    }
+
+    func endRefreshing() {
+        refreshControl.endRefreshing()
     }
 
     func updateTodoStatus(at index: Int, isCompleted: Bool) {

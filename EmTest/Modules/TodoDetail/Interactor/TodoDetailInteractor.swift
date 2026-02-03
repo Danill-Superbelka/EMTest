@@ -15,29 +15,25 @@ final class TodoDetailInteractor: TodoDetailInteractorInputProtocol {
         self.storageService = storageService
     }
 
-    func saveTodo(_ item: TodoItem) {
-        storageService.saveTodo(item) { [weak self] result in
-            switch result {
-            case .success:
-                self?.presenter?.didSaveTodo(item)
-            case .failure(let error):
-                self?.presenter?.didFailSaving(error: error)
-            }
+    func saveTodo(_ item: TodoItem) async {
+        do {
+            try await storageService.saveTodo(item)
+            await presenter?.didSaveTodo(item)
+        } catch {
+            await presenter?.didFailSaving(error: error)
         }
     }
 
-    func updateTodo(_ item: TodoItem) {
-        storageService.updateTodo(item) { [weak self] result in
-            switch result {
-            case .success:
-                self?.presenter?.didUpdateTodo(item)
-            case .failure(let error):
-                self?.presenter?.didFailSaving(error: error)
-            }
+    func updateTodo(_ item: TodoItem) async {
+        do {
+            try await storageService.updateTodo(item)
+            await presenter?.didUpdateTodo(item)
+        } catch {
+            await presenter?.didFailSaving(error: error)
         }
     }
 
-    func getNextId(completion: @escaping (Int64) -> Void) {
-        storageService.getNextId(completion: completion)
+    func getNextId() async -> Int64 {
+        await storageService.getNextId()
     }
 }

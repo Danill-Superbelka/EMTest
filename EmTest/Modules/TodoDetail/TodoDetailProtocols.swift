@@ -6,6 +6,7 @@
 import UIKit
 
 // MARK: - View
+@MainActor
 protocol TodoDetailViewProtocol: AnyObject {
     var presenter: TodoDetailPresenterProtocol? { get set }
 
@@ -16,6 +17,7 @@ protocol TodoDetailViewProtocol: AnyObject {
 }
 
 // MARK: - Presenter
+@MainActor
 protocol TodoDetailPresenterProtocol: AnyObject {
     var view: TodoDetailViewProtocol? { get set }
     var interactor: TodoDetailInteractorInputProtocol? { get set }
@@ -30,12 +32,13 @@ protocol TodoDetailPresenterProtocol: AnyObject {
 protocol TodoDetailInteractorInputProtocol: AnyObject {
     var presenter: TodoDetailInteractorOutputProtocol? { get set }
 
-    func saveTodo(_ item: TodoItem)
-    func updateTodo(_ item: TodoItem)
-    func getNextId(completion: @escaping (Int64) -> Void)
+    func saveTodo(_ item: TodoItem) async
+    func updateTodo(_ item: TodoItem) async
+    func getNextId() async -> Int64
 }
 
 // MARK: - Interactor Output
+@MainActor
 protocol TodoDetailInteractorOutputProtocol: AnyObject {
     func didSaveTodo(_ todo: TodoItem)
     func didUpdateTodo(_ todo: TodoItem)

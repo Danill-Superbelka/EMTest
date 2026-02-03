@@ -5,11 +5,11 @@
 
 import Foundation
 
-protocol NetworkServiceProtocol {
-    func fetchTodos(completion: @escaping (Result<[TodoAPIItem], Error>) -> Void)
+protocol NetworkServiceProtocol: Sendable {
+    func fetchTodos() async throws -> [TodoAPIItem]
 }
 
-final class NetworkService: NetworkServiceProtocol {
+final class NetworkService: NetworkServiceProtocol, Sendable {
 
     private let baseURL = "https://dummyjson.com"
     private let session: URLSession
@@ -18,32 +18,15 @@ final class NetworkService: NetworkServiceProtocol {
         self.session = session
     }
 
-    func fetchTodos(completion: @escaping (Result<[TodoAPIItem], Error>) -> Void) {
+    func fetchTodos() async throws -> [TodoAPIItem] {
         guard let url = URL(string: "\(baseURL)/todos") else {
-            completion(.failure(NetworkError.invalidURL))
-            return
+            throw NetworkError.invalidURL
         }
 
-        let task = session.dataTask(with: url) { data, response, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
+        let (data, _) = try await session.data(from: url)
 
-            guard let data = data else {
-                completion(.failure(NetworkError.noData))
-                return
-            }
-
-            do {
-                let decoder = JSONDecoder()
-                let response = try decoder.decode(TodoAPIResponse.self, from: data)
-                completion(.success(response.todos))
-            } catch {
-                completion(.failure(error))
-            }
-        }
-        task.resume()
+        let response = try JSONDecoder().decode(TodoAPIResponse.self, from: data)
+        return response.todos
     }
 }
 

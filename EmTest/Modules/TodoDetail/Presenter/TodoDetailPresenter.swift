@@ -5,6 +5,7 @@
 
 import Foundation
 
+@MainActor
 final class TodoDetailPresenter: TodoDetailPresenterProtocol {
 
     weak var view: TodoDetailViewProtocol?
@@ -40,9 +41,12 @@ final class TodoDetailPresenter: TodoDetailPresenterProtocol {
         if var existingTodo = currentTodo {
             existingTodo.title = title
             existingTodo.description = description
-            interactor?.updateTodo(existingTodo)
+            Task {
+                await interactor?.updateTodo(existingTodo)
+            }
         } else {
-            interactor?.getNextId { [weak self] nextId in
+            Task {
+                guard let nextId = await interactor?.getNextId() else { return }
                 let newTodo = TodoItem(
                     id: nextId,
                     title: title,
@@ -50,7 +54,7 @@ final class TodoDetailPresenter: TodoDetailPresenterProtocol {
                     createdAt: Date(),
                     isCompleted: false
                 )
-                self?.interactor?.saveTodo(newTodo)
+                await interactor?.saveTodo(newTodo)
             }
         }
     }

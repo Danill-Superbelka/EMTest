@@ -13,63 +13,52 @@ final class MockTodoStorageService: TodoStorageServiceProtocol, @unchecked Senda
     var isFirstLaunchValue = true
     private var nextId: Int64 = 1
 
-    func fetchAllTodos(completion: @escaping (Result<[TodoItem], Error>) -> Void) {
+    func fetchAllTodos() async throws -> [TodoItem] {
         if shouldFail {
-            completion(.failure(StorageError.notFound))
+            throw StorageError.notFound
+        }
+        return todos
+    }
+
+    func saveTodo(_ item: TodoItem) async throws {
+        if shouldFail {
+            throw StorageError.saveFailed
+        }
+        todos.append(item)
+    }
+
+    func saveTodos(_ items: [TodoItem]) async throws {
+        if shouldFail {
+            throw StorageError.saveFailed
+        }
+        todos.append(contentsOf: items)
+    }
+
+    func updateTodo(_ item: TodoItem) async throws {
+        if shouldFail {
+            throw StorageError.saveFailed
+        }
+        if let index = todos.firstIndex(where: { $0.id == item.id }) {
+            todos[index] = item
         } else {
-            completion(.success(todos))
+            throw StorageError.notFound
         }
     }
 
-    func saveTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void) {
+    func deleteTodo(id: Int64) async throws {
         if shouldFail {
-            completion(.failure(StorageError.saveFailed))
-        } else {
-            todos.append(item)
-            completion(.success(()))
+            throw StorageError.notFound
         }
+        todos.removeAll { $0.id == id }
     }
 
-    func saveTodos(_ items: [TodoItem], completion: @escaping (Result<Void, Error>) -> Void) {
+    func searchTodos(query: String) async throws -> [TodoItem] {
         if shouldFail {
-            completion(.failure(StorageError.saveFailed))
-        } else {
-            todos.append(contentsOf: items)
-            completion(.success(()))
+            throw StorageError.notFound
         }
-    }
-
-    func updateTodo(_ item: TodoItem, completion: @escaping (Result<Void, Error>) -> Void) {
-        if shouldFail {
-            completion(.failure(StorageError.saveFailed))
-        } else {
-            if let index = todos.firstIndex(where: { $0.id == item.id }) {
-                todos[index] = item
-                completion(.success(()))
-            } else {
-                completion(.failure(StorageError.notFound))
-            }
-        }
-    }
-
-    func deleteTodo(id: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
-        if shouldFail {
-            completion(.failure(StorageError.notFound))
-        } else {
-            todos.removeAll { $0.id == id }
-            completion(.success(()))
-        }
-    }
-
-    func searchTodos(query: String, completion: @escaping (Result<[TodoItem], Error>) -> Void) {
-        if shouldFail {
-            completion(.failure(StorageError.notFound))
-        } else {
-            let filtered = todos.filter {
-                $0.title.lowercased().contains(query.lowercased()) ||
-                $0.description.lowercased().contains(query.lowercased())
-            }
-            completion(.success(filtered))
+        return todos.filter {
+            $0.title.lowercased().contains(query.lowercased()) ||
+            $0.description.lowercased().contains(query.lowercased())
         }
     }
 
@@ -81,9 +70,9 @@ final class MockTodoStorageService: TodoStorageServiceProtocol, @unchecked Senda
         isFirstLaunchValue = false
     }
 
-    func getNextId(completion: @escaping (Int64) -> Void) {
+    func getNextId() async -> Int64 {
         let id = nextId
         nextId += 1
-        completion(id)
+        return id
     }
 }
