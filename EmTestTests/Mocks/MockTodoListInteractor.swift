@@ -6,6 +6,7 @@
 import Foundation
 @testable import EmTest
 
+@MainActor
 final class MockTodoListInteractor: TodoListInteractorInputProtocol {
 
     weak var presenter: TodoListInteractorOutputProtocol?

@@ -3,17 +3,19 @@
 //  EmTestTests
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import EmTest
 
-final class TodoListPresenterTests: XCTestCase {
+@Suite("TodoListPresenter Tests")
+@MainActor
+struct TodoListPresenterTests {
 
-    var presenter: TodoListPresenter!
-    var mockView: MockTodoListView!
-    var mockInteractor: MockTodoListInteractor!
+    private var presenter: TodoListPresenter
+    private var mockView: MockTodoListView
+    private var mockInteractor: MockTodoListInteractor
 
-    override func setUp() {
-        super.setUp()
+    init() {
         presenter = TodoListPresenter()
         mockView = MockTodoListView()
         mockInteractor = MockTodoListInteractor()
@@ -23,49 +25,47 @@ final class TodoListPresenterTests: XCTestCase {
         mockInteractor.presenter = presenter
     }
 
-    override func tearDown() {
-        presenter = nil
-        mockView = nil
-        mockInteractor = nil
-        super.tearDown()
-    }
-
-    func testViewDidLoadCallsLoadFromAPI() {
+    @Test("viewDidLoad calls loadFromAPI")
+    func viewDidLoadCallsLoadFromAPI() {
         presenter.viewDidLoad()
 
-        XCTAssertTrue(mockView.showLoadingCalled)
-        XCTAssertTrue(mockInteractor.loadFromAPIIfNeededCalled)
+        #expect(mockView.showLoadingCalled)
+        #expect(mockInteractor.loadFromAPIIfNeededCalled)
     }
 
-    func testDidTapToggleCompleteCallsInteractor() {
+    @Test("didTapToggleComplete calls interactor")
+    func didTapToggleCompleteCallsInteractor() {
         let todos = [TodoItem(id: 1, title: "Test")]
         presenter.didFetchTodos(todos)
 
         presenter.didTapToggleComplete(at: 0)
 
-        XCTAssertTrue(mockInteractor.toggleTodoCompleteCalled)
-        XCTAssertEqual(mockInteractor.toggledItem?.id, 1)
+        #expect(mockInteractor.toggleTodoCompleteCalled)
+        #expect(mockInteractor.toggledItem?.id == 1)
     }
 
-    func testDidTapDeleteCallsInteractor() {
+    @Test("didTapDelete calls interactor")
+    func didTapDeleteCallsInteractor() {
         let todos = [TodoItem(id: 1, title: "Test")]
         presenter.didFetchTodos(todos)
 
         presenter.didTapDelete(at: 0)
 
-        XCTAssertTrue(mockInteractor.deleteTodoCalled)
-        XCTAssertEqual(mockInteractor.deletedId, 1)
+        #expect(mockInteractor.deleteTodoCalled)
+        #expect(mockInteractor.deletedId == 1)
     }
 
-    func testDidSearchCallsInteractor() {
+    @Test("didSearch calls interactor")
+    func didSearchCallsInteractor() {
         presenter.didSearch(query: "test query")
 
-        XCTAssertTrue(mockView.showLoadingCalled)
-        XCTAssertTrue(mockInteractor.searchTodosCalled)
-        XCTAssertEqual(mockInteractor.searchQuery, "test query")
+        #expect(mockView.showLoadingCalled)
+        #expect(mockInteractor.searchTodosCalled)
+        #expect(mockInteractor.searchQuery == "test query")
     }
 
-    func testDidFetchTodosUpdatesView() {
+    @Test("didFetchTodos updates view")
+    func didFetchTodosUpdatesView() {
         let todos = [
             TodoItem(id: 1, title: "Task 1"),
             TodoItem(id: 2, title: "Task 2")
@@ -73,34 +73,37 @@ final class TodoListPresenterTests: XCTestCase {
 
         presenter.didFetchTodos(todos)
 
-        XCTAssertTrue(mockView.hideLoadingCalled)
-        XCTAssertTrue(mockView.showTodosCalled)
-        XCTAssertEqual(mockView.displayedTodos.count, 2)
+        #expect(mockView.hideLoadingCalled)
+        #expect(mockView.showTodosCalled)
+        #expect(mockView.displayedTodos.count == 2)
     }
 
-    func testDidFailFetchingTodosShowsError() {
+    @Test("didFailFetchingTodos shows error")
+    func didFailFetchingTodosShowsError() {
         let error = NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error"])
 
         presenter.didFailFetchingTodos(error: error)
 
-        XCTAssertTrue(mockView.hideLoadingCalled)
-        XCTAssertTrue(mockView.showErrorCalled)
-        XCTAssertEqual(mockView.errorMessage, "Test error")
+        #expect(mockView.hideLoadingCalled)
+        #expect(mockView.showErrorCalled)
+        #expect(mockView.errorMessage == "Test error")
     }
 
-    func testDidUpdateTodoUpdatesView() {
+    @Test("didUpdateTodo updates view")
+    func didUpdateTodoUpdatesView() {
         let todos = [TodoItem(id: 1, title: "Test", isCompleted: false)]
         presenter.didFetchTodos(todos)
 
         let updatedTodo = TodoItem(id: 1, title: "Test", isCompleted: true)
         presenter.didUpdateTodo(updatedTodo)
 
-        XCTAssertTrue(mockView.updateTodoStatusCalled)
-        XCTAssertEqual(mockView.updatedIndex, 0)
-        XCTAssertTrue(mockView.updatedIsCompleted ?? false)
+        #expect(mockView.updateTodoStatusCalled)
+        #expect(mockView.updatedIndex == 0)
+        #expect(mockView.updatedIsCompleted == true)
     }
 
-    func testDidDeleteTodoRemovesFromView() {
+    @Test("didDeleteTodo removes from view")
+    func didDeleteTodoRemovesFromView() {
         let todos = [
             TodoItem(id: 1, title: "Task 1"),
             TodoItem(id: 2, title: "Task 2")
@@ -109,28 +112,29 @@ final class TodoListPresenterTests: XCTestCase {
 
         presenter.didDeleteTodo(id: 1)
 
-        XCTAssertTrue(mockView.removeTodoCalled)
-        XCTAssertEqual(mockView.removedIndex, 0)
+        #expect(mockView.removeTodoCalled)
+        #expect(mockView.removedIndex == 0)
     }
 
-    func testNumberOfTodos() {
-        XCTAssertEqual(presenter.numberOfTodos(), 0)
+    @Test("numberOfTodos returns correct count")
+    func numberOfTodos() {
+        #expect(presenter.numberOfTodos() == 0)
 
         let todos = [TodoItem(id: 1, title: "Test")]
         presenter.didFetchTodos(todos)
 
-        XCTAssertEqual(presenter.numberOfTodos(), 1)
+        #expect(presenter.numberOfTodos() == 1)
     }
 
-    func testTodoAtIndex() {
+    @Test("todo(at:) returns correct item")
+    func todoAtIndex() {
         let todos = [TodoItem(id: 1, title: "Test")]
         presenter.didFetchTodos(todos)
 
         let todo = presenter.todo(at: 0)
-        XCTAssertNotNil(todo)
-        XCTAssertEqual(todo?.title, "Test")
+        #expect(todo?.title == "Test")
 
         let nilTodo = presenter.todo(at: 10)
-        XCTAssertNil(nilTodo)
+        #expect(nilTodo == nil)
     }
 }

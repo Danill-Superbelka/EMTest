@@ -3,8 +3,11 @@
 //  EmTestTests
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import EmTest
+
+// MARK: - Mocks
 
 final class MockTodoDetailView: TodoDetailViewProtocol {
     var presenter: TodoDetailPresenterProtocol?
@@ -81,15 +84,18 @@ final class MockTodoDetailDelegate: TodoDetailDelegate {
     }
 }
 
-final class TodoDetailPresenterTests: XCTestCase {
+// MARK: - Tests
 
-    var presenter: TodoDetailPresenter!
-    var mockView: MockTodoDetailView!
-    var mockInteractor: MockTodoDetailInteractor!
-    var mockDelegate: MockTodoDetailDelegate!
+@Suite("TodoDetailPresenter Tests")
+@MainActor
+struct TodoDetailPresenterTests {
 
-    override func setUp() {
-        super.setUp()
+    private var presenter: TodoDetailPresenter
+    private var mockView: MockTodoDetailView
+    private var mockInteractor: MockTodoDetailInteractor
+    private var mockDelegate: MockTodoDetailDelegate
+
+    init() {
         presenter = TodoDetailPresenter()
         mockView = MockTodoDetailView()
         mockInteractor = MockTodoDetailInteractor()
@@ -100,102 +106,98 @@ final class TodoDetailPresenterTests: XCTestCase {
         mockInteractor.presenter = presenter
     }
 
-    override func tearDown() {
-        presenter = nil
-        mockView = nil
-        mockInteractor = nil
-        mockDelegate = nil
-        super.tearDown()
-    }
-
-    func testIsNewTodoWhenNoExistingTodo() {
+    @Test("isNewTodo returns true when no existing todo")
+    func isNewTodoWhenNoExistingTodo() {
         presenter.configure(todo: nil, delegate: mockDelegate)
 
-        XCTAssertTrue(presenter.isNewTodo())
+        #expect(presenter.isNewTodo() == true)
     }
 
-    func testIsNewTodoWhenExistingTodo() {
+    @Test("isNewTodo returns false when existing todo")
+    func isNewTodoWhenExistingTodo() {
         let todo = TodoItem(id: 1, title: "Test")
         presenter.configure(todo: todo, delegate: mockDelegate)
 
-        XCTAssertFalse(presenter.isNewTodo())
+        #expect(presenter.isNewTodo() == false)
     }
 
-    func testViewDidLoadShowsExistingTodo() {
+    @Test("viewDidLoad shows existing todo")
+    func viewDidLoadShowsExistingTodo() {
         let todo = TodoItem(id: 1, title: "Test", description: "Description")
         presenter.configure(todo: todo, delegate: mockDelegate)
 
         presenter.viewDidLoad()
 
-        XCTAssertTrue(mockView.showTodoCalled)
-        XCTAssertEqual(mockView.displayedTodo?.title, "Test")
+        #expect(mockView.showTodoCalled)
+        #expect(mockView.displayedTodo?.title == "Test")
     }
 
-    func testSaveTodoWithEmptyTitleShowsError() {
+    @Test("saveTodo with empty title shows error")
+    func saveTodoWithEmptyTitleShowsError() {
         presenter.configure(todo: nil, delegate: mockDelegate)
 
         presenter.saveTodo(title: "   ", description: "Description")
 
-        XCTAssertTrue(mockView.showErrorCalled)
-        XCTAssertFalse(mockInteractor.saveTodoCalled)
+        #expect(mockView.showErrorCalled)
+        #expect(mockInteractor.saveTodoCalled == false)
     }
 
-    func testSaveNewTodo() {
+    @Test("save new todo")
+    func saveNewTodo() async throws {
         presenter.configure(todo: nil, delegate: mockDelegate)
-
-        let expectation = self.expectation(description: "Save new todo")
 
         presenter.saveTodo(title: "New Task", description: "Description")
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertTrue(self.mockView.showLoadingCalled)
-            XCTAssertTrue(self.mockInteractor.getNextIdCalled)
-            XCTAssertTrue(self.mockInteractor.saveTodoCalled)
-            expectation.fulfill()
-        }
+        try await Task.sleep(for: .milliseconds(150))
 
-        waitForExpectations(timeout: 1)
+        #expect(mockView.showLoadingCalled)
+        #expect(mockInteractor.getNextIdCalled)
+        #expect(mockInteractor.saveTodoCalled)
     }
 
-    func testUpdateExistingTodo() {
+    @Test("update existing todo")
+    func updateExistingTodo() {
         let todo = TodoItem(id: 1, title: "Original")
         presenter.configure(todo: todo, delegate: mockDelegate)
 
         presenter.saveTodo(title: "Updated", description: "New Description")
 
-        XCTAssertTrue(mockView.showLoadingCalled)
-        XCTAssertTrue(mockInteractor.updateTodoCalled)
-        XCTAssertEqual(mockInteractor.updatedTodo?.title, "Updated")
+        #expect(mockView.showLoadingCalled)
+        #expect(mockInteractor.updateTodoCalled)
+        #expect(mockInteractor.updatedTodo?.title == "Updated")
     }
 
-    func testDidSaveTodoNotifiesDelegate() {
+    @Test("didSaveTodo notifies delegate with didCreateTodo")
+    func didSaveTodoNotifiesDelegate() {
         presenter.configure(todo: nil, delegate: mockDelegate)
         let newTodo = TodoItem(id: 1, title: "New")
 
         presenter.didSaveTodo(newTodo)
 
-        XCTAssertTrue(mockView.hideLoadingCalled)
-        XCTAssertTrue(mockDelegate.didCreateTodoCalled)
+        #expect(mockView.hideLoadingCalled)
+        #expect(mockDelegate.didCreateTodoCalled)
     }
 
-    func testDidUpdateTodoNotifiesDelegate() {
+    @Test("didUpdateTodo notifies delegate with didSaveTodo")
+    func didUpdateTodoNotifiesDelegate() {
         let todo = TodoItem(id: 1, title: "Original")
         presenter.configure(todo: todo, delegate: mockDelegate)
         let updatedTodo = TodoItem(id: 1, title: "Updated")
 
         presenter.didUpdateTodo(updatedTodo)
 
-        XCTAssertTrue(mockView.hideLoadingCalled)
-        XCTAssertTrue(mockDelegate.didSaveTodoCalled)
+        #expect(mockView.hideLoadingCalled)
+        #expect(mockDelegate.didSaveTodoCalled)
     }
 
-    func testDidFailSavingShowsError() {
+    @Test("didFailSaving shows error")
+    func didFailSavingShowsError() {
         let error = NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "Save failed"])
 
         presenter.didFailSaving(error: error)
 
-        XCTAssertTrue(mockView.hideLoadingCalled)
-        XCTAssertTrue(mockView.showErrorCalled)
-        XCTAssertEqual(mockView.errorMessage, "Save failed")
+        #expect(mockView.hideLoadingCalled)
+        #expect(mockView.showErrorCalled)
+        #expect(mockView.errorMessage == "Save failed")
     }
 }

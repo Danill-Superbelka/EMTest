@@ -6,6 +6,7 @@
 import Foundation
 @testable import EmTest
 
+@MainActor
 final class MockTodoListView: TodoListViewProtocol {
 
     var presenter: TodoListPresenterProtocol?

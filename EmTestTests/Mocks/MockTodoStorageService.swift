@@ -6,7 +6,7 @@
 import Foundation
 @testable import EmTest
 
-final class MockTodoStorageService: TodoStorageServiceProtocol {
+final class MockTodoStorageService: TodoStorageServiceProtocol, @unchecked Sendable {
 
     var todos: [TodoItem] = []
     var shouldFail = false

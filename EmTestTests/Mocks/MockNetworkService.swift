@@ -6,7 +6,7 @@
 import Foundation
 @testable import EmTest
 
-final class MockNetworkService: NetworkServiceProtocol {
+final class MockNetworkService: NetworkServiceProtocol, @unchecked Sendable {
 
     var mockTodos: [TodoAPIItem] = []
     var shouldFail = false

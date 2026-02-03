@@ -9,25 +9,25 @@ enum AppColors {
 
     // MARK: - Background
 
-    static let background = UIColor(named: "Colors/Background") ?? .black
-    static let backgroundSecondary = UIColor(named: "Colors/BackgroundSecondary") ?? UIColor(white: 0.1, alpha: 1.0)
-    static let backgroundTertiary = UIColor(named: "Colors/BackgroundTertiary") ?? UIColor(white: 0.15, alpha: 1.0)
+    static let background = UIColor.background
+    static let backgroundSecondary = UIColor.backgroundSecondary
+    static let backgroundTertiary = UIColor.backgroundTertiary
 
     // MARK: - Text
 
-    static let textPrimary = UIColor(named: "Colors/TextPrimary") ?? .white
-    static let textSecondary = UIColor(named: "Colors/TextSecondary") ?? .gray
-    static let textPlaceholder = UIColor(named: "Colors/TextSecondary") ?? .gray
+    static let textPrimary = UIColor.textPrimary
+    static let textSecondary = UIColor.textSecondary
+    static let textPlaceholder = UIColor.textSecondary
 
     // MARK: - Accent
 
-    static let accent = UIColor(named: "Colors/Accent") ?? .systemYellow
-    static let accentSecondary = UIColor(named: "Colors/TextSecondary") ?? .gray
+    static let accent = UIColor.accent
+    static let accentSecondary = UIColor.textSecondary
 
     // MARK: - Semantic
 
-    static let destructive = UIColor(named: "Colors/Destructive") ?? .systemRed
-    static let separator = UIColor(named: "Colors/Separator") ?? .darkGray
+    static let destructive = UIColor.destructive
+    static let separator = UIColor.separator
 
     // MARK: - Components
 

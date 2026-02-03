@@ -3,12 +3,15 @@
 //  EmTestTests
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import EmTest
 
-final class NetworkServiceTests: XCTestCase {
+@Suite("NetworkService Tests")
+struct NetworkServiceTests {
 
-    func testTodoAPIResponseDecoding() {
+    @Test("TodoAPIResponse decoding")
+    func apiResponseDecoding() throws {
         let json = """
         {
             "todos": [
@@ -21,36 +24,34 @@ final class NetworkServiceTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-        let decoder = JSONDecoder()
-        let response = try? decoder.decode(TodoAPIResponse.self, from: json)
+        let response = try JSONDecoder().decode(TodoAPIResponse.self, from: json)
 
-        XCTAssertNotNil(response)
-        XCTAssertEqual(response?.todos.count, 2)
-        XCTAssertEqual(response?.todos[0].id, 1)
-        XCTAssertEqual(response?.todos[0].todo, "Test task")
-        XCTAssertFalse(response?.todos[0].completed ?? true)
-        XCTAssertTrue(response?.todos[1].completed ?? false)
-        XCTAssertEqual(response?.total, 2)
+        #expect(response.todos.count == 2)
+        #expect(response.todos[0].id == 1)
+        #expect(response.todos[0].todo == "Test task")
+        #expect(response.todos[0].completed == false)
+        #expect(response.todos[1].completed == true)
+        #expect(response.total == 2)
     }
 
-    func testTodoAPIItemDecoding() {
+    @Test("TodoAPIItem decoding")
+    func apiItemDecoding() throws {
         let json = """
         {"id": 1, "todo": "Buy groceries", "completed": true, "userId": 42}
         """.data(using: .utf8)!
 
-        let decoder = JSONDecoder()
-        let item = try? decoder.decode(TodoAPIItem.self, from: json)
+        let item = try JSONDecoder().decode(TodoAPIItem.self, from: json)
 
-        XCTAssertNotNil(item)
-        XCTAssertEqual(item?.id, 1)
-        XCTAssertEqual(item?.todo, "Buy groceries")
-        XCTAssertTrue(item?.completed ?? false)
-        XCTAssertEqual(item?.userId, 42)
+        #expect(item.id == 1)
+        #expect(item.todo == "Buy groceries")
+        #expect(item.completed == true)
+        #expect(item.userId == 42)
     }
 
-    func testNetworkErrorDescriptions() {
-        XCTAssertEqual(NetworkError.invalidURL.errorDescription, "Invalid URL")
-        XCTAssertEqual(NetworkError.noData.errorDescription, "No data received")
-        XCTAssertEqual(NetworkError.decodingError.errorDescription, "Failed to decode response")
+    @Test("NetworkError descriptions")
+    func errorDescriptions() {
+        #expect(NetworkError.invalidURL.errorDescription == "Invalid URL")
+        #expect(NetworkError.noData.errorDescription == "No data received")
+        #expect(NetworkError.decodingError.errorDescription == "Failed to decode response")
     }
 }

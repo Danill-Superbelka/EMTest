@@ -6,6 +6,7 @@
 import Foundation
 @testable import EmTest
 
+@MainActor
 final class MockTodoListPresenter: TodoListInteractorOutputProtocol {
 
     var didFetchTodosCalled = false

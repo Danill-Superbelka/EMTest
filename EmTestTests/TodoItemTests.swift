@@ -3,12 +3,15 @@
 //  EmTestTests
 //
 
-import XCTest
+import Testing
+import Foundation
 @testable import EmTest
 
-final class TodoItemTests: XCTestCase {
+@Suite("TodoItem Tests")
+struct TodoItemTests {
 
-    func testTodoItemInitialization() {
+    @Test("Initialization with all parameters")
+    func initialization() {
         let date = Date()
         let todo = TodoItem(
             id: 1,
@@ -18,44 +21,48 @@ final class TodoItemTests: XCTestCase {
             isCompleted: false
         )
 
-        XCTAssertEqual(todo.id, 1)
-        XCTAssertEqual(todo.title, "Test Task")
-        XCTAssertEqual(todo.description, "Test Description")
-        XCTAssertEqual(todo.createdAt, date)
-        XCTAssertFalse(todo.isCompleted)
+        #expect(todo.id == 1)
+        #expect(todo.title == "Test Task")
+        #expect(todo.description == "Test Description")
+        #expect(todo.createdAt == date)
+        #expect(todo.isCompleted == false)
     }
 
-    func testTodoItemDefaultValues() {
+    @Test("Default values")
+    func defaultValues() {
         let todo = TodoItem(id: 1, title: "Test")
 
-        XCTAssertEqual(todo.id, 1)
-        XCTAssertEqual(todo.title, "Test")
-        XCTAssertEqual(todo.description, "")
-        XCTAssertFalse(todo.isCompleted)
+        #expect(todo.id == 1)
+        #expect(todo.title == "Test")
+        #expect(todo.description == "")
+        #expect(todo.isCompleted == false)
     }
 
-    func testTodoItemEquality() {
+    @Test("Equality")
+    func equality() {
         let date = Date()
         let todo1 = TodoItem(id: 1, title: "Test", description: "Desc", createdAt: date, isCompleted: false)
         let todo2 = TodoItem(id: 1, title: "Test", description: "Desc", createdAt: date, isCompleted: false)
 
-        XCTAssertEqual(todo1, todo2)
+        #expect(todo1 == todo2)
     }
 
-    func testTodoItemInequality() {
+    @Test("Inequality")
+    func inequality() {
         let todo1 = TodoItem(id: 1, title: "Test1")
         let todo2 = TodoItem(id: 2, title: "Test2")
 
-        XCTAssertNotEqual(todo1, todo2)
+        #expect(todo1 != todo2)
     }
 
-    func testTodoItemMutation() {
+    @Test("Mutation")
+    func mutation() {
         var todo = TodoItem(id: 1, title: "Original", isCompleted: false)
 
         todo.title = "Updated"
         todo.isCompleted = true
 
-        XCTAssertEqual(todo.title, "Updated")
-        XCTAssertTrue(todo.isCompleted)
+        #expect(todo.title == "Updated")
+        #expect(todo.isCompleted == true)
     }
 }
